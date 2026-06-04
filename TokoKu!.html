@@ -1,0 +1,1487 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TokoKu — Simulasi Jualan (Login System)</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0c0f14;--bg2:#141820;--bg3:#1a1f2b;--bg4:#222836;
+  --card:#181d28;--card2:#1e2433;
+  --border:#2a3040;--border2:#343b4d;
+  --text:#e2e5eb;--text2:#8b93a7;--text3:#5a6275;
+  --green:#22c55e;--green2:#16a34a;--greenBg:rgba(34,197,94,.1);
+  --red:#ef4444;--red2:#dc2626;--redBg:rgba(239,68,68,.1);
+  --blue:#3b82f6;--blueBg:rgba(59,130,246,.1);
+  --yellow:#eab308;--yellowBg:rgba(234,179,8,.1);
+  --orange:#f97316;--orangeBg:rgba(249,115,22,.1);
+  --purple:#a855f7;--purpleBg:rgba(168,85,247,.1);
+  --cyan:#06b6d4;--cyanBg:rgba(6,182,212,.1);
+  --indigo:#6366f1;--indigoBg:rgba(99,102,241,.1);
+  --gold:#fbbf24; --goldBg:rgba(251,191,36,0.1);
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* === HUD === */
+.hud{height:64px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:10px;flex-shrink:0;position:relative;z-index:10}
+.hud-brand{font-weight:900;font-size:18px;margin-right:20px;display:flex;align-items:center;gap:10px}
+.hud-brand i{color:var(--green);font-size:22px}
+.hud-stat{display:flex;align-items:center;gap:6px;padding:4px 12px;background:var(--bg3);border-radius:10px;font-size:12px;font-weight:600;border:1px solid var(--border);min-width:110px;}
+.hud-stat i{font-size:14px}
+.hud-stat.money .val{font-size:13px}
+.hud-stat.money i{color:var(--green)}
+.hud-stat.rep i{color:var(--yellow)}
+.hud-stat.sold .val{font-size:13px}
+.hud-stat.sold i{color:var(--orange)}
+.hud-spacer{flex:1}
+.hud-btn{width:36px;height:36px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;transition:all .15s}
+.hud-btn:hover{background:var(--bg4);color:var(--text);border-color:var(--border2)}
+
+/* === NAV === */
+.nav{height:56px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:4px;flex-shrink:0}
+.nav-btn{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:700;color:var(--text2);cursor:pointer;border:none;background:transparent;font-family:inherit;transition:all .15s;display:flex;align-items:center;gap:8px}
+.nav-btn:hover{color:var(--text);background:var(--bg3)}
+.nav-btn.active{color:var(--text);background:var(--bg4);border:1px solid var(--border2)}
+.nav-btn.active i{color:var(--green)}
+.nav-btn .badge{background:var(--red);color:#fff;font-size:9px;font-weight:700;padding:2px 5px;border-radius:4px;margin-left:2px}
+
+/* === MAIN === */
+.main{flex:1;overflow:hidden;position:relative}
+.page{position:absolute;inset:0;overflow-y:auto;padding:24px;opacity:0;pointer-events:none;transform:translateY(10px);transition:all .25s ease}
+.page.active{opacity:1;pointer-events:all;transform:translateY(0)}
+
+/* === CARDS & GRIDS === */
+.grid-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:24px}
+.g-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;position:relative;overflow:hidden;transition:border-color .2s,transform .2s;box-shadow:0 4px 12px rgba(0,0,0,.1)}
+.g-card:hover{border-color:var(--border2);transform:translateY(-2px)}
+.g-card .g-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:12px}
+.g-card .g-label{font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.g-card .g-val{font-size:24px;font-weight:900;color:var(--text)}
+.g-card .g-sub{font-size:10px;color:var(--text2);margin-top:4px}
+.g-card::after{content:'';position:absolute;top:0;right:0;width:80px;height:80px;border-radius:50%;opacity:.03;transform:translate(20px,-20px)}
+
+.prod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+.p-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;transition:all .2s;cursor:default}
+.p-card:hover{border-color:var(--border2);transform:translateY(-3px);box-shadow:0 10px 30px rgba(0,0,0,.3)}
+.p-card .p-icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:12px}
+.p-card .p-name{font-size:15px;font-weight:700;margin-bottom:2px}
+.p-card .p-cat{font-size:11px;color:var(--text3);margin-bottom:10px}
+.p-card .p-row{display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px}
+.p-card .p-row .lbl{color:var(--text3)}
+.p-card .p-row .val{font-weight:700}
+.p-card .p-actions{display:flex;gap:6px;margin-top:14px}
+
+/* === BUTTONS === */
+.btn{padding:10px 18px;border-radius:10px;font-size:12px;font-weight:700;border:none;cursor:pointer;font-family:inherit;transition:all .15s;display:inline-flex;align-items:center;gap:5px}
+.btn:active{transform:scale(.96)}
+.btn-g{background:var(--green);color:#000}.btn-g:hover{background:var(--green2)}
+.btn-b{background:var(--blue);color:#fff}.btn-b:hover{background:#2563eb}
+.btn-r{background:var(--redBg);color:var(--red);border:1px solid rgba(239,68,68,.2)}.btn-r:hover{background:rgba(239,68,68,.2)}
+.btn-y{background:var(--yellowBg);color:var(--yellow);border:1px solid rgba(234,179,8,.2)}.btn-y:hover{background:rgba(234,179,8,.2)}
+.btn-o{background:var(--orangeBg);color:var(--orange);border:1px solid rgba(249,115,22,.2)}.btn-o:hover{background:rgba(249,115,22,.2)}
+.btn-ghost{background:var(--bg3);color:var(--text2);border:1px solid var(--border)}.btn-ghost:hover{background:var(--bg4);color:var(--text)}
+.btn:disabled{opacity:.35;cursor:not-allowed;transform:none}
+.btn-lg{padding:16px 36px;font-size:15px;border-radius:12px}
+.btn-sm{padding:5px 12px;font-size:11px;border-radius:6px}
+.btn-purple{background:var(--purpleBg);color:var(--purple);border:1px solid rgba(168,85,247,.2)}.btn-purple:hover{background:rgba(168,85,247,.2)}
+
+/* === INPUT & SELECT === */
+.inp, select{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:inherit;font-size:14px;font-weight:600;outline:none;transition:border-color .15s;width:100%}
+.inp:focus, select:focus{border-color:var(--blue)}
+.inp-sm{padding:5px 8px;font-size:12px;width:100px}
+
+/* === LABEL UNTUK FORM === */
+.form-label {
+  font-size:11px;
+  color: var(--text2);
+  margin-bottom: 6px;
+  display: block;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing:0.5px;
+}
+
+/* === FILTER CHIPS === */
+.chips{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.chip{padding:6px 16px;border-radius:22px;font-size:11px;font-weight:700;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;font-family:inherit;transition:all .15s}
+.chip:hover{border-color:var(--border2);color:var(--text)}
+.chip.on{background:var(--green);border-color:var(--green);color:#000;font-weight:800}
+
+/* === TABLE === */
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th{text-align:left;padding:12px 16px;border-bottom:2px solid var(--border);color:var(--text3);font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:800}
+.tbl td{padding:14px 16px;border-bottom:1px solid var(--border);vertical-align:middle}
+.tbl tr:hover td{background:var(--bg2)}
+.badge{display:inline-block;padding:3px 8px;border-radius:8px;font-size:11px;font-weight:700}
+.badge-hi{background:var(--greenBg);color:var(--green)}
+.badge-md{background:var(--yellowBg);color:var(--yellow)}
+.badge-lo{background:var(--redBg);color:var(--red)}
+
+/* === CUSTOMER PANEL === */
+.cust-panel{max-width:600px;margin:0 auto}
+.cust-box{background:var(--card);border:1px solid var(--border);border-radius:18px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.1)}
+.cust-head{padding:24px;display:flex;align-items:center;gap:16px;border-bottom:1px solid var(--border)}
+.cust-avatar{width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:#fff;flex-shrink:0}
+.cust-name{font-size:18px;font-weight:700}
+.cust-type{font-size:13px;color:var(--text2);margin-top:2px}
+.cust-body{padding:24px}
+.cust-chat{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:18px;font-size:14px;line-height:1.6;margin-bottom:18px;border-left:4px solid var(--blue);color:var(--text2)}
+.cust-chat .hl{color:var(--green);font-weight:700}
+.cust-chat .hlr{color:var(--red);font-weight:700;font-size:12px}
+.cust-offer{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.cust-offer label{font-size:13px;color:var(--text3);min-width:90px;font-weight:700}
+.cust-actions{display:flex;gap:10px}
+
+/* === CHART === */
+.chart-wrap{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;margin-top:16px}
+.chart-bars{display:flex;align-items:flex-end;gap:4px;height:90px;margin-top:12px}
+.chart-bar{flex:1;border-radius:4px 4px 0 0;min-height:2px;transition:height .4s ease;position:relative}
+.chart-bar:hover::after{content:attr(data-val);position:absolute;bottom:100%;left:50%;transform:translateX(-50%);font-size:11px;font-weight:700;color:var(--text);background:var(--bg3);padding:2px 8px;border-radius:4px;white-space:nowrap;margin-bottom:4px}
+
+/* === HISTORY === */
+.h-item{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--border)}
+.h-item:last-child{border-bottom:none}
+.h-ico{width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.h-txt{flex:1;font-size:14px}
+.h-txt .h-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.h-amt{font-size:14px;font-weight:800}
+.h-amt.plus{color:var(--green)}
+.h-amt.minus{color:var(--red)}
+.h-time{font-size:10px;color:var(--text3);min-width:50px;text-align:right}
+
+/* === WELCOME (UPDATED UI) === */
+@keyframes pulse-glow {
+  0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); transform: scale(1); }
+  50% { box-shadow: 0 0 0 20px rgba(34, 197, 94, 0); transform: scale(1.05); }
+  100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); transform: scale(1); }
+}
+
+.welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;padding:40px;position:relative}
+.w-logo{width:100px;height:100px;border-radius:30px;background:linear-gradient(135deg,var(--green),#15803d);display:flex;align-items:center;justify-content:center;font-size:45px;color:#fff;margin-bottom:30px;animation:pulse-glow 3s infinite;box-shadow:0 15px 50px rgba(34,197,94,.3)}
+.w-title{font-size:48px;font-weight:900;margin-bottom:10px;letter-spacing:-1px;background:linear-gradient(to right, #fff, #9ca3af);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-shadow:0 4px 20px rgba(0,0,0,0.5)}
+.w-sub{font-size:16px;color:var(--text2);max-width:500px;line-height:1.6;margin-bottom:40px;font-weight:500}
+.w-feats{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;max-width:600px;width:100%;margin-bottom:40px}
+.w-feat{background:linear-gradient(145deg, var(--card), var(--bg3));border:1px solid var(--border);border-radius:16px;padding:20px;text-align:left;transition:all .3s ease;position:relative;overflow:hidden}
+.w-feat:hover{border-color:var(--green);transform:translateY(-5px);box-shadow:0 10px 30px rgba(34,197,94,0.15)}
+.w-feat i{font-size:26px;margin-bottom:12px;display:block;background:rgba(255,255,255,0.05);width:50px;height:50px;line-height:50px;border-radius:12px;color:var(--green)}
+.w-feat h4{font-size:15px;font-weight:800;margin-bottom:4px;color:var(--text)}
+.w-feat p{font-size:12px;color:var(--text3);line-height:1.5}
+
+/* === GAME OVER / REPORT === */
+.go-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;padding:40px}
+.go-icon{font-size:80px;margin-bottom:16px}
+.go-title{font-size:36px;font-weight:900;margin-bottom:8px}
+.go-sub{font-size:15px;color:var(--text2);max-width:400px;margin-bottom:28px}
+.go-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:500px;width:100%;margin-bottom:28px}
+.go-stat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px}
+.go-stat .go-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:6px;font-weight:700}
+.go-stat .go-val{font-size:20px;font-weight:800}
+
+/* === COLLAB PAGE STYLES === */
+.collab-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.collab-banner{background:linear-gradient(135deg,#1e1b4b,#312e81);border:1px solid var(--indigo);border-radius:20px;padding:30px;text-align:center;margin-bottom:30px;position:relative;overflow:hidden}
+.collab-banner::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle,rgba(99,102,241,0.1),transparent);animation:spin 20s linear infinite}
+@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+.collab-avatar-big{width:80px;height:80px;border-radius:50%;border:3px solid var(--indigo);margin:0 auto 15px;position:relative;z-index:2;display:flex;align-items:center;justify-content:center;font-size:32px;background:var(--bg);color:#fff}
+.collab-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+.celeb-card{background:var(--card2);border:1px solid var(--border);border-radius:16px;padding:20px;text-align:center;transition:all .2s;position:relative}
+.celeb-card:hover{transform:translateY(-5px);border-color:var(--indigo)}
+.celeb-img{width:60px;height:60px;border-radius:50%;margin:0 auto 12px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--text3)}
+.celeb-name{font-size:14px;font-weight:800;margin-bottom:4px;display:flex;align-items:center;justify-content:center;gap:4px}
+.celeb-verified{color:#3b82f6;font-size:12px}
+.celeb-cat{font-size:11px;color:var(--text3);margin-bottom:12px}
+.celeb-stat{display:flex;justify-content:center;gap:10px;margin-bottom:15px;font-size:10px;font-weight:700;color:var(--text2)}
+.celeb-stat span{background:var(--bg);padding:2px 6px;border-radius:4px}
+
+/* === AUTH / LOGIN SYSTEM STYLES === */
+.auth-overlay{position:fixed;inset:0;background:rgba(12,15,20,0.95);z-index:2000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(10px)}
+.auth-box{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:40px;width:100%;max-width:400px;box-shadow:0 25px 50px -12px rgba(0,0,0,.5);animation:fadeUp .4s ease}
+.auth-header{text-align:center;margin-bottom:30px}
+.auth-header h2{font-size:24px;font-weight:800;margin-bottom:8px;background:linear-gradient(to right, #22c55e, #3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.auth-header p{font-size:13px;color:var(--text3)}
+.auth-form{display:flex;flex-direction:column;gap:16px}
+.auth-form input{padding:14px;border-radius:12px;font-size:15px}
+.auth-btn{padding:14px;font-size:16px;border-radius:12px;font-weight:800;width:100%}
+.auth-switch{text-align:center;margin-top:20px;font-size:13px;color:var(--text3)}
+.auth-switch span{color:var(--blue);cursor:pointer;font-weight:700;text-decoration:underline}
+.auth-switch span:hover{color:var(--cyan)}
+
+/* === TOAST === */
+.toast-box{position:fixed;top:80px;right:20px;z-index:999;display:flex;flex-direction:column;gap:8px}
+.toast{padding:12px 20px;border-radius:12px;font-size:13px;font-weight:700;font-family:inherit;animation:tin .25s ease,tout .25s ease 2.5s forwards;border:1px solid;backdrop-filter:blur(12px)}
+.toast.ts{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.25);color:var(--green)}
+.toast.te{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.25);color:var(--red)}
+.toast.tw{background:rgba(234,179,8,.12);border-color:rgba(234,179,8,.25);color:var(--yellow)}
+.toast.ti{background:rgba(59,130,246,.12);border-color:rgba(59,130,246,.25);color:var(--blue)}
+.toast.tp{background:rgba(168,85,247,.12);border-color:rgba(168,85,247,.25);color:var(--purple)}
+@keyframes tin{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+@keyframes tout{to{opacity:0;transform:translateY(-8px)}}
+
+/* === DAY TRANS === */
+.day-overlay{position:fixed;inset:0;background:var(--bg);z-index:500;display:flex;flex-direction:column;align-items:center;justify-content:center;animation:fin .3s ease}
+.day-overlay .d-num{font-size:56px;font-weight:900;color:var(--blue)}
+.day-overlay .d-txt{font-size:14px;color:var(--text2);margin-top:4px}
+@keyframes fin{from{opacity:0}to{opacity:1}}
+
+/* === PROGRESS === */
+.prog{height:6px;background:var(--bg);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px;transition:width .5s ease}
+
+/* === SECTION HEADER === */
+.sec-h{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.sec-h h2{font-size:20px;font-weight:800}
+.sec-h .sec-sub{font-size:13px;color:var(--text2);margin-left:auto}
+
+/* === EMPTY STATE === */
+.empty{text-align:center;padding:70px 20px;color:var(--text3)}
+.empty i{font-size:50px;margin-bottom:16px;opacity:.3;display:block}
+.empty p{font-size:14px;margin-bottom:16px}
+
+/* === ANIM === */
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.fup{animation:fadeUp .3s ease both}
+.fup2{animation:fadeUp .3s ease .05s both}
+.fup3{animation:fadeUp .3s ease .1s both}
+.fup4{animation:fadeUp .3s ease .15s both}
+
+/* === FLOATING PARTICLES (bg) === */
+.bg-particles{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.bg-particles span{position:absolute;width:2px;height:2px;background:var(--green);border-radius:50%;opacity:.15;animation:floatUp linear infinite}
+@keyframes floatUp{0%{transform:translateY(100vh) scale(1);opacity:0}10%{opacity:.15}90%{opacity:.15}100%{transform:translateY(-10vh) scale(0);opacity:0}}
+</style>
+</head>
+<body>
+
+<div class="bg-particles" id="bgParticles"></div>
+
+<!-- AUTH OVERLAY (LOGIN/REGISTER) -->
+<div id="authOverlay" class="auth-overlay" style="display:none;">
+  <div class="auth-box">
+    <div class="auth-header">
+      <h2 id="authTitle">Selamat Datang</h2>
+      <p id="authDesc">Masuk untuk melanjutkan bisnismu.</p>
+    </div>
+    <div class="auth-form">
+      <input type="text" id="authUser" class="inp" placeholder="Username" autocomplete="off">
+      <input type="password" id="authPass" class="inp" placeholder="Password" autocomplete="off">
+      <button id="authActionBtn" class="btn btn-g auth-btn" onclick="handleAuth()">Masuk</button>
+    </div>
+    <div class="auth-switch">
+      <span id="authSwitchText" onclick="toggleAuthMode()">Belum punya akun? Daftar</span>
+    </div>
+  </div>
+</div>
+
+<!-- HUD -->
+<div class="hud" id="hud" style="display:none;">
+  <div class="hud-brand"><i class="fa-solid fa-store"></i> TokoKu</div>
+  
+  <div class="hud-stat money"><i class="fa-solid fa-wallet"></i> <span class="val">Rp <span id="hMoney">0</span></div>
+  <div class="hud-stat day"><i class="fa-solid fa-calendar"></i> <span class="val">Hari <span id="hDay">1</span></div>
+  <div class="hud-stat rep"><i class="fa-solid fa-star"></i> <span class="val"><span id="hRep">50</span></div>
+  <div class="hud-stat sold"><i class="fa-solid fa-bag-shopping"></i> <span class="val">Sold: <span id="hSold">0</span></div>
+  <div class="hud-spacer"></div>
+  <!-- SAVE BUTTON -->
+  <div class="hud-btn" onclick="saveGame()" title="Simpan Progres"><i class="fa-solid fa-floppy-disk"></i></div>
+  <!-- LAPORAN -->
+  <div class="hud-btn" onclick="showReport()" title="Laporan Bisnis"><i class="fa-solid fa-chart-line"></i></div>
+  <div class="hud-btn" onclick="toggleSound()" title="Suara" id="soundBtn"><i class="fa-solid fa-volume-high"></i></div>
+  <div class="hud-btn" onclick="showHelp()" title="Bantuan"><i class="fa-solid fa-circle-question"></i></div>
+  <!-- LOGOUT BUTTON (NEW) -->
+  <div class="hud-btn" onclick="logout()" title="Keluar" style="color:var(--red)"><i class="fa-solid fa-right-from-bracket"></i></div>
+</div>
+
+<!-- NAV -->
+<div class="nav" id="nav" style="display:none;">
+  <button class="nav-btn active" data-page="dashboard" onclick="goPage('dashboard')"><i class="fa-solid fa-chart-pie"></i> Dashboard</button>
+  <button class="nav-btn" data-page="packing" onclick="goPage('packing')"><i class="fa-solid fa-boxes-packing"></i> Packing</button>
+  <button class="nav-btn" data-page="customer" onclick="goPage('customer')"><i class="fa-solid fa-user-group"></i> Customer <span class="badge" id="custBadge" style="display:none;">0</span></button>
+  <button class="nav-btn" data-page="jualan" onclick="goPage('jualan')"><i class="fa-solid fa-tags"></i> Jualan</button>
+  <button class="nav-btn" data-page="stock" onclick="goPage('stock')"><i class="fa-solid fa-boxes-stacked"></i> Stock</button>
+  <!-- COLLAB BUTTON -->
+  <button class="nav-btn" data-page="collab" onclick="goPage('collab')"><i class="fa-solid fa-handshake"></i> Collab</button>
+  <button class="nav-btn" data-page="history" onclick="goPage('history')"><i class="fa-solid fa-clock-rotate-left"></i> Riwayat</button>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <!-- Welcome -->
+  <div class="page active" id="pageWelcome">
+    <div class="welcome">
+      <div class="w-logo"><i class="fa-solid fa-store"></i></div>
+      <div class="w-title">TokoKu</div>
+      <div class="w-sub" id="welcomeUserMsg">Simulasi bisnis modern dengan harga kategori realistis dan strategi Collab.</div>
+      <div class="w-feats">
+        <div class="w-feat"><i class="fa-solid fa-cart-shopping"></i><h4>Beli Stok Murah</h4><p>Ambil produk dari supplier dengan harga beli spesifik per kategori.</p></div>
+        <div class="w-feat"><i class="fa-solid fa-tags"></i><h4>Harga Dinamis</h4><p>Sistem otomatis menghitung margin jual berdasarkan kategori yang dipilih.</p></div>
+        <div class="w-feat"><i class="fa-solid fa-comments"></i><h4>Negosiasi</h4><p>Layani customer, tawar harga, dan raih rating bintang untuk reputasi toko.</p></div>
+        <div class="w-feat"><i class="fa-solid fa-ranking-star"></i><h4>Naikkan Reputasi</h4><p>Reputasi tinggi bukan cuma gengsi, tapi membuka lebih banyak potensi customer!</p></div>
+      </div>
+      <button class="btn btn-g btn-lg" onclick="startGame()"><i class="fa-solid fa-play"></i> Mulai Berjualan</button>
+      <div id="continueContainer" style="display:none; margin-top:15px;">
+        <button class="btn btn-b btn-lg" onclick="loadGame()"><i class="fa-solid fa-right-to-bracket"></i> Lanjutkan Main</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dashboard -->
+  <div class="page" id="pageDashboard"></div>
+  <!-- Packing (ex Supplier) -->
+  <div class="page" id="pagePacking"></div>
+  <!-- Customer -->
+  <div class="page" id="pageCustomer"></div>
+  <!-- Jualan (New Page) -->
+  <div class="page" id="pageJualan"></div>
+  <!-- Stock (ex Inventory) -->
+  <div class="page" id="pageStock"></div>
+  <!-- Collab (New Page) -->
+  <div class="page" id="pageCollab"></div>
+  <!-- History -->
+  <div class="page" id="pageHistory"></div>
+  <!-- Game Over (Report) -->
+  <div class="page" id="pageGameover"></div>
+</div>
+
+<div class="toast-box" id="toastBox"></div>
+
+<script>
+// ==============================
+// DATABASE & AUTH SYSTEM
+// ==============================
+const USERS_KEY = 'tokoku_users_db';
+const CURRENT_USER_KEY = 'tokoku_current_user';
+let SAVE_KEY = 'tokoku_save_v3'; // Initial default, akan diubah saat login
+let isRegisterMode = false;
+
+// Fungsi cek login saat load
+function checkAuth() {
+  const currentUser = localStorage.getItem(CURRENT_USER_KEY);
+  if (currentUser) {
+    // User sudah login sebelumnya
+    SAVE_KEY = 'tokoku_save_' + currentUser;
+    // Update pesan welcome
+    const welcomeMsg = document.getElementById('welcomeUserMsg');
+    if(welcomeMsg) welcomeMsg.textContent = `Halo, ${currentUser}! Siap untuk berbisnis hari ini?`;
+    
+    // Cek save game user ini
+    checkSaveStatus();
+  } else {
+    // Belum login, tampilkan form login
+    document.getElementById('authOverlay').style.display = 'flex';
+  }
+}
+
+function toggleAuthMode() {
+  isRegisterMode = !isRegisterMode;
+  const title = document.getElementById('authTitle');
+  const desc = document.getElementById('authDesc');
+  const btn = document.getElementById('authActionBtn');
+  const switchText = document.getElementById('authSwitchText');
+
+  if (isRegisterMode) {
+    title.textContent = "Buat Akun Baru";
+    desc.textContent = "Daftar untuk memulai perjalanan bisnis Anda.";
+    btn.textContent = "Daftar Sekarang";
+    btn.className = "btn btn-b auth-btn";
+    switchText.textContent = "Sudah punya akun? Masuk";
+  } else {
+    title.textContent = "Selamat Datang";
+    desc.textContent = "Masuk untuk melanjutkan bisnismu.";
+    btn.textContent = "Masuk";
+    btn.className = "btn btn-g auth-btn";
+    switchText.textContent = "Belum punya akun? Daftar";
+  }
+}
+
+function handleAuth() {
+  const userIn = document.getElementById('authUser');
+  const passIn = document.getElementById('authPass');
+  const u = userIn.value.trim();
+  const p = passIn.value.trim();
+
+  if (!u || !p) {
+    toast("Username dan Password tidak boleh kosong!", "te");
+    return;
+  }
+
+  // Ambil database users
+  let users = JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
+
+  if (isRegisterMode) {
+    // Logika Register
+    if (users.find(x => x.username === u)) {
+      toast("Username sudah terpakai!", "tw");
+      return;
+    }
+    users.push({ username: u, password: p });
+    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+    toast("Registrasi berhasil! Silakan login.", "ts");
+    toggleAuthMode(); // Kembali ke mode login
+  } else {
+    // Logika Login
+    const userFound = users.find(x => x.username === u && x.password === p);
+    if (userFound) {
+      // Login Berhasil
+      localStorage.setItem(CURRENT_USER_KEY, u);
+      SAVE_KEY = 'tokoku_save_' + u; // Set save key khusus user ini
+      
+      // Update UI
+      document.getElementById('authOverlay').style.display = 'none';
+      const welcomeMsg = document.getElementById('welcomeUserMsg');
+      if(welcomeMsg) welcomeMsg.textContent = `Halo, ${u}! Siap untuk berbisnis hari ini?`;
+      
+      // Load save game user ini jika ada
+      checkSaveStatus();
+      toast(`Selamat datang kembali, ${u}!`, "ti");
+    } else {
+      toast("Username atau Password salah!", "te");
+    }
+  }
+  
+  // Reset input
+  userIn.value = '';
+  passIn.value = '';
+}
+
+function logout() {
+  if(confirm("Yakin ingin keluar? Progress permainan akan tetap tersimpan di akun Anda.")) {
+    localStorage.removeItem(CURRENT_USER_KEY);
+    location.reload(); // Refresh halaman untuk reset state
+  }
+}
+
+
+// ==============================
+// KONFIGURASI SIMPAN
+// ==============================
+// NOTE: SAVE_KEY sudah diubah menjadi let di atas untuk dinamis per user
+
+// ==============================
+// DATA KATEGORI & HARGA (UPDATED)
+// ==============================
+const KAT_RULES = {
+  'Elektronik': { beli: 500000, jual: 1000000, icon: 'fa-microchip', color: 'var(--blue)' },
+  'Fashion':    { beli: 70000,  jual: [125000, 350000], icon: 'fa-shirt', color: 'var(--purple)' },
+  'Makanan':    { beli: 30000,  jual: [70000, 100000], icon: 'fa-utensils', color: 'var(--orange)' },
+  'Rumah Tangga':{ beli: 100000, jual: 150000, icon: 'fa-house-chimney', color: 'var(--cyan)' },
+  'Olahraga':   { beli: 350000, jual: [500000, 750000], icon: 'fa-futbol', color: 'var(--green)' },
+  'Parfume':    { beli: 235000, jual: [270000, 630000], icon: 'fa-spray-can', color: 'var(--teal)' },
+  'Mainan':     { beli: 115000, jual: 175000, icon: 'fa-puzzle-piece', color: 'var(--yellow)' },
+  'Kecantikan': { beli: 235000, jual: [500000, 800000], icon: 'fa-spa', color: 'var(--pink)' },
+};
+
+function getSellPrice(kategori) {
+  const rule = KAT_RULES[kategori];
+  if (!rule) return 0;
+  if (Array.isArray(rule.jual)) {
+    return Math.floor(Math.random() * (rule.jual[1] - rule.jual[0] + 1)) + rule.jual[0];
+  } else {
+    return rule.jual;
+  }
+}
+
+function getSellPriceDisplay(kategori) {
+  const rule = KAT_RULES[kategori];
+  if (!rule) return 'Rp 0';
+  if (Array.isArray(rule.jual)) {
+    return `${rp(rule.jual[0])} - ${rp(rule.jual[1])}`;
+  } else {
+    return rp(rule.jual);
+  }
+}
+
+// ==============================
+// DATA NAMA & TIPE
+// ==============================
+const NAMA_CUST = [
+  'Sarutobi Budi','Uchiha Siti','Andi Naka','Hatake Dewi','Senju Rizki',
+  'Hatake Omar','Uzumaki Hendra','Nurul Naka','Fajar Nara','Linda Nara',
+  'Hapis Nara','Uzumaki tomas','Dimas Arya','Putri Handayani','Sarutobi Yoga',
+  'Fitri naka','Bayu Pratama','Citra Maharani','Uchiha bayu','Uchiha kw'
+];
+const TIPE_CUST = [
+  {tipe:'Pembeli Biasa',tol:1.15,min:1,max:2,icon:'fa-user',color:'var(--blue)'},
+  {tipe:'Reseller',tol:0.90,min:3,max:6,icon:'fa-store',color:'var(--orange)'},
+  {tipe:'Pembeli Borong',tol:0.80,min:5,max:10,icon:'fa-truck-fast',color:'var(--cyan)'},
+  {tipe:'Kolektor',tol:1.30,min:1,max:1,icon:'fa-gem',color:'var(--purple)'},
+  {tipe:'Pembeli Hemat',tol:1.00,min:1,max:3,icon:'fa-piggy-bank',color:'var(--yellow)'},
+];
+const AVATAR_CLR = ['#e06c75','#98c379','#e5c07b','#61afef','#c678dd','#56b6c2','#d19a66','#f44747','#22c55e','#a855f7'];
+
+// ==============================
+// DATA SELEBGRAM
+// ==============================
+const CELEBS = [
+  { id: 101, nama: 'Ibox', niche: 'Reseller', icon: 'fa-store' },
+  { id: 102, nama: 'Lazada', niche: 'Shop', icon: 'fa-store' },
+  { id: 103, nama: 'IKEA', niche: 'Shop', icon: 'fa-shop' },
+  { id: 104, nama: 'Gemini ai', niche: 'Ai', icon: 'fa-robot' },
+  { id: 105, nama: 'Willie Salim', niche: 'Content Creator', icon: 'fa-face-laugh-squint' },
+  { id: 106, nama: 'Super Indo', niche: 'Shop', icon: 'fa-shop' },
+  { id: 107, nama: 'Reza Arap', niche: 'Comedy', icon: 'fa-face-laugh-squint' },
+  { id: 108, nama: 'Windah Basudara', niche: 'Streamer', icon: 'fa-face-laugh-squint' },
+  { id: 109, nama: 'Kiky Saputri Sim', niche: 'Comedy', icon: 'fa-face-laugh-squint' },
+  { id: 110, nama: 'Budi Cloning', niche: 'General', icon: 'fa-brands' }
+];
+
+// ==============================
+// STATE
+// ==============================
+let S = {};
+let PRODUK = []; 
+
+function initState(){
+  S = {
+    started:false, over:false,
+    day:1,
+    money:1000000,
+    rep:50, sold:0,
+    earn:0, spend:0,
+    stok:{}, harga:{},
+    riwayat:[], chart:[],
+    cust:null, custToday:0, custMax:20,
+    filter:'Semua', page:'dashboard',
+    soundOn:true,
+    collabActive: false,
+    collabName: null,
+    collabDaysLeft: 0,
+    collabBoost: 0,
+    collabDiscount: 0
+  };
+  
+  PRODUK = [
+    { id: 1, nama: 'Laptop Gaming', kat: 'Elektronik', beli: 500000, jual: 1000000, icon: 'fa-laptop' },
+    { id: 2, nama: 'Kaos Polos', kat: 'Fashion', beli: 70000, jual: 150000, icon: 'fa-shirt' }, 
+  ];
+  
+  PRODUK.forEach(p => {
+    p.jual = getSellPrice(p.kat);
+    p.baseJual = p.jual; 
+  });
+
+  PRODUK.forEach(p => {
+    S.stok[p.id] = 0; 
+    S.harga[p.id] = p.jual;
+  });
+}
+initState();
+
+// ==============================
+// FITUR SIMPAN / MUAT / RESET
+// ==============================
+function saveGame() {
+  // Pastikan user login sebelum save
+  const currentUser = localStorage.getItem(CURRENT_USER_KEY);
+  if(!currentUser) {
+    toast("Harap login terlebih dahulu!", "te");
+    return;
+  }
+  
+  const saveData = {
+    S: S,
+    PRODUK: PRODUK,
+    timestamp: Date.now()
+  };
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
+    toast("Permainan berhasil disimpan!", "ts");
+  } catch (e) {
+    toast("Gagal menyimpan data.", "te");
+    console.error(e);
+  }
+}
+
+function loadGame() {
+  const savedJSON = localStorage.getItem(SAVE_KEY);
+  if (!savedJSON) {
+    toast("Tidak ada data tersimpan.", "te");
+    return;
+  }
+  try {
+    const parsed = JSON.parse(savedJSON);
+    S = parsed.S;
+    PRODUK = parsed.PRODUK;
+    
+    S.started = true;
+    
+    document.getElementById('hud').style.display='';
+    document.getElementById('nav').style.display=''; 
+    document.getElementById('pageWelcome').classList.remove('active');
+    goPage(S.page || 'dashboard');
+    
+    toast("Selamat datang kembali!", "ti");
+  } catch (e) {
+    console.error(e);
+    toast("Data save rusak!", "te");
+  }
+}
+
+function checkSaveStatus() {
+  const hasSave = !!localStorage.getItem(SAVE_KEY);
+  const btn = document.getElementById('continueContainer');
+  if(btn) btn.style.display = hasSave ? 'block' : 'none';
+}
+
+// ==============================
+// AUDIO
+// ==============================
+let audioCtx;
+function beep(freq,dur,type='sine',vol=0.08){
+  if(!S.soundOn)return;
+  if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+  o.type=type;o.frequency.value=freq;
+  g.gain.setValueAtTime(vol,audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+dur);
+  o.connect(g);g.connect(audioCtx.destination);
+  o.start();o.stop(audioCtx.currentTime+dur);
+}
+function sfxBuy(){beep(520,.1);setTimeout(()=>beep(660,.1),80)}
+function sfxSell(){beep(880,.08);setTimeout(()=>beep(1100,.12),60);setTimeout(()=>beep(1320,.15),130)}
+function sfxReject(){beep(300,.15,'square',0.05);setTimeout(()=>beep(220,.2,'square',0.04),100)}
+function sfxDay(){beep(440,.12);setTimeout(()=>beep(550,.12),100);setTimeout(()=>beep(660,.15),200);setTimeout(()=>beep(880,.2),320)}
+function sfxWin(){[523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,.2),i*120))}
+function sfxLose(){[400,350,300,200].forEach((f,i)=>setTimeout(()=>beep(f,.2,'triangle',0.06),i*150))}
+function sfxCollab(){beep(600,.1);setTimeout(()=>beep(800,.1),100);setTimeout(()=>beep(1000,.2),200)}
+function toggleSound(){
+  S.soundOn=!S.soundOn;
+  document.querySelector('#soundBtn i').className=S.soundOn?'fa-solid fa-volume-high':'fa-solid fa-volume-xmark';
+}
+
+// ==============================
+// HELPERS
+// ==============================
+function rp(n){return'Rp '+n.toLocaleString('id-ID')}
+function repLabel(r){return r>=80?'Sangat Bagus':r>=60?'Bagus':r>=40?'Cukup':r>=20?'Kurang':'Buruk'}
+function margin(p){return((S.harga[p.id]-p.beli)/p.beli*100).toFixed(0)}
+function pick(arr){return arr[Math.floor(Math.random()*arr.length)]}
+function rand(a,b){return a+Math.floor(Math.random()*(b-a+1))}
+
+function toast(msg,t='ti'){
+  const d=document.createElement('div');d.className='toast '+t;d.textContent=msg;
+  document.getElementById('toastBox').appendChild(d);setTimeout(()=>d.remove(),2800);
+}
+
+// ==============================
+// BG PARTICLES
+// ==============================
+(function(){
+  const c=document.getElementById('bgParticles');
+  for(let i=0;i<20;i++){
+    const s=document.createElement('span');
+    s.style.left=Math.random()*100+'%';
+    s.style.animationDuration=(8+Math.random()*12)+'s';
+    s.style.animationDelay=Math.random()*10+'s';
+    s.style.width=s.style.height=(1+Math.random()*2)+'px';
+    c.appendChild(s);
+  }
+})();
+
+// ==============================
+// NAVIGATION
+// ==============================
+function goPage(p){
+  S.page=p;
+  document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
+  const target=document.getElementById('page'+p.charAt(0).toUpperCase()+p.slice(1));
+  if(target)target.classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b=>{
+    b.classList.toggle('active',b.dataset.page===p);
+  });
+  renderPage();
+}
+
+function renderPage(){
+  const m={
+    dashboard:renderDash,
+    packing:renderPacking,
+    customer:renderCustomer,
+    jualan:renderJualan,
+    stock:renderStock,
+    collab:renderCollab, 
+    history:renderHist,
+    gameover:renderGO
+  };
+  if(m[S.page])m[S.page]();
+  updateHUD();
+}
+
+function updateHUD(){
+  if(!S.started)return;
+  const hMoney = document.getElementById('hMoney');
+  const hDay = document.getElementById('hDay');
+  const hRep = document.getElementById('hRep');
+  const hSold = document.getElementById('hSold');
+  const b=document.getElementById('custBadge');
+  const left=S.custMax-S.custToday;
+  
+  if(hMoney) hMoney.textContent='Rp '+(S.money.toLocaleString('id-ID'));
+  if(hDay) hDay.textContent=`Hari ${S.day}`;
+  if(hRep) hRep.textContent=S.rep;
+  if(hSold) hSold.textContent='Sold: '+(S.sold);
+  if(S.page!=='customer'&&left>0){
+    b.style.display='';b.textContent=left}else{b.style.display='none'}
+}
+
+// ==============================
+// DASHBOARD
+// ==============================
+function renderDash(){
+  const profit=S.earn-S.spend;
+  const totalStok=Object.values(S.stok).reduce((a,b)=>a+b,0);
+  const el=document.getElementById('pageDashboard');
+  let collabAlert = '';
+  if(S.collabActive){
+    collabAlert = `
+      <div style="background:var(--indigoBg);border:1px solid var(--indigo);color:var(--indigo);padding:12px;border-radius:12px;margin-bottom:20px;display:flex;align-items:center;gap:12px;font-size:13px;font-weight:700;">
+        <i class="fa-solid fa-handshake-simple"></i>
+        <div>Collab dengan <span style="color:#fff">${S.collabName}</span> aktif! (+${S.collabBoost}% Jual, -${S.collabDiscount}% Beli) — ${S.collabDaysLeft} hari tersisa</div>
+      </div>
+    `;
+  }
+  el.innerHTML=`
+    ${collabAlert}
+    <div class="grid-stats fup">
+      <div class="g-card">
+        <div class="g-icon" style="background:var(--greenBg);color:var(--green)"><i class="fa-solid fa-wallet"></i></div>
+        <div class="g-label">Modal</div>
+        <div class="g-val">${rp(S.money)}</div>
+        <div class="g-sub">Mode Sandbox (Tanpa Target)</div>
+      </div>
+      <div class="g-card fup2">
+        <div class="g-icon" style="background:${profit>=0?'var(--greenBg)':'var(--redBg)'};color:${profit>=0?'var(--green)':'var(--red)'}"><i class="fa-solid fa-arrow-trend-up"></i></div>
+        <div class="g-label">Total Profit</div>
+        <div class="g-val" style="color:${profit>=0?'var(--green)':'var(--red)'}">${rp(profit)}</div>
+        <div class="g-sub">Pemasukan: ${rp(S.earn)}</div>
+      </div>
+      <div class="g-card fup3">
+        <div class="g-icon" style="background:var(--orangeBg);color:var(--orange)"><i class="fa-solid fa-boxes-stacked"></i></div>
+        <div class="g-label">Total Stok</div>
+        <div class="g-val">${totalStok}</div>
+        <div class="g-sub">${PRODUK.filter(p=>S.stok[p.id]>0).length} jenis produk</div>
+      </div>
+      <div class="g-card fup4">
+        <div class="g-icon" style="background:var(--yellowBg);color:var(--yellow)"><i class="fa-solid fa-star"></i></div>
+        <div class="g-label">Reputasi</div>
+        <div class="g-val">${S.rep}</div>
+        <div class="g-sub">${repLabel(S.rep)} — ${S.custMax} cust/hari</div>
+      </div>
+    </div>
+    <div class="chart-wrap fup">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:14px;font-weight:700">Grafik Pendapatan Harian</span>
+        <span style="font-size:11px;color:var(--text3)">Hari 1-${S.chart.length||S.day}</span>
+      </div>
+      <div class="chart-bars">
+        ${S.chart.map((v,i)=>{
+          const mx=Math.max(...S.chart,1);
+          const h=Math.max(2,v/mx*72);
+          const c=v>0?'var(--green)':'var(--border)';
+          return`<div class="chart-bar" style="height:${h}px;background:${c}" data-val="Hari ${i+1}: ${rp(v)}"></div>`;
+        }).join('')}
+        ${S.chart.length<S.day?'<div class="chart-bar" style="height:2px;background:var(--text3);opacity:.3"></div>':''}
+      </div>
+    </div>
+    <div style="margin-top:20px;display:flex;gap:12px;align-items:center" class="fup">
+      <button class="btn btn-y btn-lg" onclick="nextDay()"><i class="fa-solid fa-moon"></i> Akhiri Hari ${S.day}</button>
+      <span style="font-size:13px;color:var(--text3)">Customer tersisa: ${S.custMax-S.custToday}</span>
+      <div style="flex:1"></div>
+      <button class="btn btn-r" onclick="confirmReset()"><i class="fa-solid fa-trash-can"></i> Hapus Save &amp; Reset</button>
+    </div>
+  `;
+}
+
+function confirmReset() {
+  if(confirm("Yakin ingin menghapus data tersimpan dan mereset permainan?")) {
+    resetGame(true);
+  }
+}
+
+// ==============================
+// PACKING
+// ==============================
+function renderPacking(){
+  const list=PRODUK.filter(p=>S.filter==='Semua'||p.kat===S.filter);
+  const el=document.getElementById('pagePacking');
+  const kategoriOptions = Object.keys(KAT_RULES).map(k => `<option value="${k}">${k}</option>`).join('');
+
+  el.innerHTML=`
+    <div class="sec-h fup"><h2>Packing (Beli &amp; Buat)</h2><span class="sec-sub">Modal: ${rp(S.money)}</span></div>
+    <div style="margin-bottom:20px;background:#222;padding:20px;border-radius:12px;border:1px solid #444">
+      <h3 style="margin-bottom:15px;color:#fff;font-size:15px;"><i class="fa-solid fa-flask"></i> Ciptakan Produk Baru</h3>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <div style="flex:2; min-width:200px;">
+          <label class="form-label">Nama Produk</label>
+          <input id="inputNamaProduk" type="text" placeholder="Contoh: Sepatu Nike" style="width:100%;padding:8px;border-radius:12px;border:none;background:#333;color:#fff;">
+        </div>
+        <div style="flex:1; min-width:140px;">
+          <label class="form-label">Kategori</label>
+          <select id="inputKategori" style="width:100%;padding:8px;border-radius:12px;border:none;background:#333;color:#fff;">
+            ${kategoriOptions}
+          </select>
+        </div>
+        <div style="flex:1; min-width:120px;">
+          <label class="form-label">Icon</label>
+          <select id="inputIcon" style="width:100%;padding:8px;border-radius:12px;border:none;background:#333;color:#fff;">
+             <option value="fa-box">Kotak</option>
+             <option value="fa-shirt">Baju</option>
+             <option value="fa-shoe-prints">Sepatu</option>
+             <option value="fa-glasses">Kacamata</option>
+             <option value="fa-microchip">Chip</option>
+             <option value="fa-mobile-screen">HP</option>
+             <option value="fa-laptop">Laptop</option>
+             <option value="fa-gamepad">Gamepad</option>
+             <option value="fa-bolt">Listrik</option>
+             <option value="fa-utensils">Makan</option>
+             <option value="fa-spray-can">Parfum</option>
+             <option value="fa-bag-shopping">Tas</option>
+             <option value="fa-puzzle-piece">Mainan</option>
+             <option value="fa-spa">Kecantikan</option>
+             <option value="fa-car">Mobil</option>
+             <option value="fa-gem">Perhiasan</option>
+             <option value="fa-wand-magic-sparkles">Ajaib</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:flex-end;">
+          <button onclick="buatProdukBaru()" style="padding:12px 24px;background:var(--green);color:#000;border:none;border-radius:12px;font-weight:bold;cursor:pointer;height:40px;white-space:nowrap;">Buat</button>
+        </div>
+      </div>
+      <div style="margin-top:8px;font-size:11px;color:var(--text3)">
+        <i class="fa-solid fa-circle-info"></i> Harga beli & jual otomatis mengikuti aturan kategori yang dipilih.
+      </div>
+    </div>
+    <div class="chips fup2">
+      <button class="chip ${S.filter==='Semua'?'on':''}" onclick="setFilter('Semua')">Semua</button>
+      ${Object.keys(KAT_RULES).map(k=>`<button class="chip ${S.filter===k?'on':''}" onclick="setFilter('${k}')">${k}</button>`).join('')}
+    </div>
+    <div class="prod-grid fup3">
+      ${list.map(p=>{
+        const rule = KAT_RULES[p.kat];
+        const currentBeli = S.collabActive ? Math.floor(p.beli * (1 - S.collabDiscount/100)) : p.beli;
+        const hj=S.harga[p.id];
+        const mg=margin(p);
+        const stk=S.stok[p.id];
+        const can1=S.money>=currentBeli;
+        const can5=S.money>=currentBeli*5;
+        const can10=S.money>=currentBeli*10;
+        const sellDisplay = getSellPriceDisplay(p.kat);
+        const beliLabel = S.collabActive ? `<span style="color:var(--text3);text-decoration:line-through;margin-right:4px">${rp(p.beli)}</span> ${rp(currentBeli)}` : rp(currentBeli);
+        const catColor = rule ? rule.color : 'var(--text3)';
+        const catIcon = rule ? rule.icon : 'fa-box';
+
+        return`
+        <div class="p-card">
+          <div class="p-icon" style="background:${catColor}22;color:${catColor}"><i class="fa-solid ${catIcon}"></i></div>
+          <div class="p-name">${p.nama}</div>
+          <div class="p-cat"><i class="fa-solid ${catIcon}" style="margin-right:4px"></i>${p.kat}</div>
+          <div class="p-row"><span class="lbl">Modal</span><span class="val">${beliLabel}</span></div>
+          <div class="p-row"><span class="lbl">Est. Jual</span><span class="val" style="color:var(--green)">${sellDisplay}</span></div>
+          <div class="p-row"><span class="lbl">Margin Real</span><span class="val" style="color:${mg>=150?'var(--green)':mg>=120?'var(--blue)':'var(--red)'}">${mg}%</span></div>
+          <div class="p-row"><span class="lbl">Stok</span><span class="val">${stk}</span></div>
+          <div class="p-actions">
+            <button class="btn btn-g btn-sm" onclick="beli(${p.id},1)" ${can1?'':'disabled'}>+1</button>
+            <button class="btn btn-g btn-sm" onclick="beli(${p.id},5)" ${can5?'':'disabled'}>+5</button>
+            <button class="btn btn-g btn-sm" onclick="beli(${p.id},10)" ${can10?'':'disabled'}>+10</button>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  `;
+}
+
+function buatProdukBaru() {
+  const namaInput = document.getElementById('inputNamaProduk');
+  const katInput = document.getElementById('inputKategori');
+  const iconInput = document.getElementById('inputIcon');
+  
+  const namaBaru = namaInput.value;
+  const katBaru = katInput.value;
+  const iconBaru = iconInput.value;
+
+  if (!namaBaru) {
+    alert("Nama produk harus diisi!");
+    return;
+  }
+
+  const rule = KAT_RULES[katBaru];
+  if (!rule) {
+    alert("Kategori tidak valid!");
+    return;
+  }
+
+  const hargaBeli = rule.beli;
+  const hargaJual = getSellPrice(katBaru);
+
+  const idBaru = PRODUK.length > 0 ? Math.max(...PRODUK.map(p => p.id)) + 1 : 1;
+
+  const produkBaru = {
+    id: idBaru,
+    nama: namaBaru,
+    kat: katBaru,
+    beli: hargaBeli,
+    jual: hargaJual,
+    baseJual: hargaJual,
+    icon: iconBaru,
+    listed: false 
+  };
+
+  PRODUK.push(produkBaru);
+  S.stok[idBaru] = 0;
+  S.harga[idBaru] = hargaJual;
+
+  // FIX COLLAB BUG
+  if (S.collabActive) {
+    const boostedPrice = Math.round(hargaJual * (1 + S.collabBoost/100));
+    S.harga[idBaru] = boostedPrice;
+  }
+
+  namaInput.value = '';
+  alert(`Produk "${namaBaru}" berhasil dibuat!\nBeli: ${hargaBeli}\nJual: ${S.harga[idBaru]} ${S.collabActive ? '(Sudah termasuk Boost Collab)' : ''}`);
+  renderPacking();
+}
+
+function setFilter(k){S.filter=k;renderPacking()}
+function beli(id,q){
+  const p=PRODUK.find(x=>x.id===id);
+  const currentBeli = S.collabActive ? Math.floor(p.beli * (1 - S.collabDiscount/100)) : p.beli;
+  const tot=currentBeli*q;
+  
+  if(S.money<tot){toast('Modal tidak cukup!','te');return}
+  S.money-=tot;S.spend+=tot;S.stok[id]+=q;
+  S.riwayat.push({type:'buy',text:`Beli ${q}x ${p.nama}`,amt:-tot,day:S.day});
+  toast(`Beli ${q}x ${p.nama} — ${rp(tot)}`,'ts');
+  sfxBuy();renderPage();
+}
+
+// ==============================
+// JUALAN
+// ==============================
+function renderJualan(){
+  const list=PRODUK.filter(p=>S.stok[p.id]>0);
+  const el=document.getElementById('pageJualan');
+  if(!list.length){
+    el.innerHTML=`<div class="empty fup"><i class="fa-solid fa-box-open"></i><p>Belum ada stok untuk dijual</p><button class="btn btn-b" onclick="goPage('packing')"><i class="fa-solid fa-boxes-packing"></i> Ke Packing</button></div>`;
+    return;
+  }
+  el.innerHTML=`
+    <div class="sec-h fup"><h2>Jualan (Unggah Produk)</h2><span class="sec-sub">Pilih produk untuk muncul di Customer</span></div>
+    <div class="prod-grid fup2">
+      ${list.map(p=>{
+        const isListed = p.listed;
+        const hj=S.harga[p.id];
+        const mg=margin(p);
+        const stk=S.stok[p.id];
+        const rule = KAT_RULES[p.kat];
+        const catColor = rule ? rule.color : 'var(--text3)';
+        const catIcon = rule ? rule.icon : 'fa-box';
+
+        return`
+        <div class="p-card" style="border:${isListed?'2px solid var(--green)':'1px solid var(--border)'}">
+          <div class="p-icon" style="background:${catColor}22;color:${catColor}"><i class="fa-solid ${catIcon}"></i></div>
+          <div class="p-name">${p.nama}</div>
+          <div class="p-cat"><i class="fa-solid ${catIcon}" style="margin-right:4px"></i>${p.kat}</div>
+          <div class="p-row"><span class="lbl">Harga Jual</span><span class="val" style="color:var(--green)">${rp(hj)}</span></div>
+          <div class="p-row"><span class="lbl">Stok</span><span class="val">${stk}</span></div>
+          <div class="p-row"><span class="lbl">Margin</span><span class="val" style="color:${mg>=150?'var(--green)':mg>=120?'var(--blue)':'var(--red)'}">${mg}%</span></div>
+          <div class="p-row" style="margin-top:10px"><span class="lbl">Status</span><span class="val" style="color:${isListed?'var(--green)':'var(--text3)'}">${isListed?'Terjual':'Arsip'}</span></div>
+          <div class="p-actions">
+            <button class="btn ${isListed?'btn-r':'btn-g'} btn-sm" onclick="toggleList(${p.id})">
+              ${isListed?'<i class="fa-solid fa-ban"></i> Turunkan':'<i class="fa-solid fa-upload"></i> Unggah'}
+            </button>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+function toggleList(id){
+  const p=PRODUK.find(x=>x.id===id);
+  p.listed=!p.listed;
+  toast(p.listed?`${p.nama} diunggah ke toko!`:`${p.nama} ditarik dari toko.`,'ti');
+  renderJualan();
+}
+
+// ==============================
+// CUSTOMER
+// ==============================
+function renderCustomer(){
+  const el=document.getElementById('pageCustomer');
+  if(!S.cust){
+    const left=S.custMax-S.custToday;
+    if(left<=0){
+      el.innerHTML=`
+        <div class="cust-panel fup">
+          <div class="cust-box" style="text-align:center;padding:50px 20px">
+            <i class="fa-solid fa-moon" style="font-size:44px;color:var(--yellow);margin-bottom:16px;display:block"></i>
+            <div style="font-size:17px;font-weight:700;margin-bottom:6px">Hari ${S.day} Selesai</div>
+            <div style="font-size:13px;color:var(--text2);margin-bottom:20px">Semua customer sudah dilayani</div>
+            <button class="btn btn-y btn-lg" onclick="nextDay()"><i class="fa-solid fa-forward"></i> Lanjut Hari ${S.day+1}</button>
+          </div>
+        </div>`;
+      return;
+    }
+    const hasStock=PRODUK.filter(p=>S.stok[p.id]>0 && p.listed);
+    el.innerHTML=`
+      <div class="cust-panel fup">
+        <div class="cust-box" style="text-align:center;padding:50px 20px">
+          <i class="fa-solid fa-bell" style="font-size:44px;color:var(--red);margin-bottom:16px;display:block"></i>
+          <div style="font-size:17px;font-weight:700;margin-bottom:6px">Menunggu Customer</div>
+          <div style="font-size:13px;color:var(--text2);margin-bottom:20px">${left} customer tersisa hari ini</div>
+          <button class="btn btn-b btn-lg" onclick="spawnCust()" ${hasStock?'':'disabled'}><i class="fa-solid fa-user-plus"></i> Panggil Customer</button>
+          ${!hasStock?'<div style="font-size:12px;color:var(--red);margin-top:12px">Tidak ada produk dijual! Unggah di menu Jualan.</div>':''}
+        </div>
+      </div>`;
+    return;
+  }
+
+  const c=S.cust;
+  const hj=S.harga[c.produk.id];
+  const maxH=Math.round(hj*c.td.tol);
+  const defaultOffer=Math.min(hj,maxH);
+
+  el.innerHTML=`
+    <div class="cust-panel fup">
+      <div class="cust-box">
+        <div class="cust-head">
+          <div class="cust-avatar" style="background:${c.color}">${c.nama.charAt(0)}</div>
+          <div>
+            <div class="cust-name">${c.nama}</div>
+            <div class="cust-type"><i class="fa-solid ${c.td.icon}" style="color:${c.td.color};margin-right:4px"></i>${c.td.tipe} — Mau beli ${c.qty}x ${c.produk.nama}</div>
+          </div>
+        </div>
+        <div class="cust-body">
+          <div class="cust-chat">
+            ${c.dialog}
+            <br><br>
+            <span class="hl">Budget: ${rp(maxH)}/pcs</span>
+            ${maxH<hj?'<br><span class="hlr"><i class="fa-solid fa-triangle-exclamation"></i> Harga jual sistem melebihi budget customer</span>':''}
+          </div>
+          <div class="cust-offer">
+            <label>Tawaran/pcs:</label>
+            <input class="inp" type="number" id="offerInput" value="${defaultOffer}" min="${c.produk.beli}" max="${maxH}" style="max-width:180px">
+            <span style="font-size:12px;color:var(--text3)">Total: <strong id="offerTotal">${rp(defaultOffer*c.qty)}</strong></span>
+          </div>
+          <div class="cust-actions">
+            <button class="btn btn-g" onclick="acceptDeal()"><i class="fa-solid fa-check"></i> Terima</button>
+            <button class="btn btn-o" onclick="counterOffer()"><i class="fa-solid fa-handshake"></i> Tawar Ulang</button>
+            <button class="btn btn-r" onclick="rejectDeal()"><i class="fa-solid fa-xmark"></i> Tolak</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  setTimeout(()=>{
+    const inp=document.getElementById('offerInput');
+    if(inp)inp.addEventListener('input',()=>{
+      const v=parseInt(inp.value)||0;
+      const t=document.getElementById('offerTotal');
+      if(t)t.textContent=rp(v*c.qty);
+    });
+  },50);
+}
+
+function spawnCust(){
+  const avail=PRODUK.filter(p=>S.stok[p.id]>0 && p.listed);
+  if(!avail.length){toast('Tidak ada produk terjual di menu Jualan!','te');return}
+
+  const produk=pick(avail);
+  const td=pick(TIPE_CUST);
+  const nama=pick(NAMA_CUST);
+  const color=pick(AVATAR_CLR);
+  let qty=rand(td.min,td.max);
+  qty=Math.min(qty,S.stok[produk.id]);
+
+  const hj=S.harga[produk.id];
+  const maxH=Math.round(hj*td.tol);
+
+  const DIALOGS={
+    'Pembeli Biasa':[
+      `Halo, saya mau beli ${produk.nama}. Harganya berapa ya? Saya bisa sampai ${rp(maxH)} per item.`,
+      `Siang! Tertarik sama ${produk.nama}. Kalau ${rp(maxH)} per pcs saya ambil ${qty} pcs.`
+    ],
+    'Reseller':[
+      `Saya reseller, mau ambil ${qty}pcs ${produk.nama} untuk dijual lagi. Bisa ${rp(maxH)}/pcs? Kalau cocok saya rutin order.`,
+      `Mau dong ${qty}pcs ${produk.nama}. Budget saya ${rp(maxH)} per pcs, soalnya saya jual balik.`
+    ],
+    'Pembeli Borong':[
+      `Wow, saya butuh ${qty}pcs ${produk.nama} buat event! Tapi harganya harus ${rp(maxH)}/pcs ya, jumlahnya banyak nih.`,
+      `Borong ${qty}pcs ${produk.nama}! Harga ${rp(maxH)} per pcs deal ya?`
+    ],
+    'Kolektor':[
+      `${produk.nama}... langka ini! Saya kolektor, mau ambil 1 aja. Harga ${rp(maxH)} ok banget buat saya!`,
+      `Saya cari-cari ${produk.nama} ini. Bisa ${rp(maxH)}? Saya bayar cash.`
+    ],
+    'Pembeli Hemat':[
+      `Harga ${produk.nama} berapa? Hmm, maksimal saya bisa ${rp(maxH)} aja ya. Lebih dari itu saya pikir dulu.`,
+      `Boleh liat ${produk.nama}? Kalau harganya ${rp(maxH)} saya ambil ${qty} pcs ya.`
+    ]
+  };
+  const dialog=pick(DIALOGS[td.tipe]||DIALOGS['Pembeli Biasa']);
+  S.cust={nama,td,produk,qty,color,dialog,maxH};
+  renderPage();
+}
+
+function acceptDeal(){
+  const c=S.cust;if(!c)return;
+  const offer=parseInt(document.getElementById('offerInput')?.value)||0;
+  const total=offer*c.qty;
+
+  if(offer>c.maxH){
+    toast(`Customer menolak! Maks ${rp(c.maxH)}/pcs`,'te');
+    sfxReject();
+    S.rep=Math.max(0,S.rep-2);
+    S.riwayat.push({type:'reject',text:`${c.nama} menolak harga ${c.produk.nama}`,amt:0,day:S.day});
+    S.cust=null;S.custToday++;renderPage();return;
+  }
+  if(offer<c.produk.beli){toast('Harga di bawah modal!','te');return}
+
+  S.stok[c.produk.id]-=c.qty;
+  S.money+=total;S.earn+=total;S.sold+=c.qty;
+
+  const mg=((offer-c.produk.beli)/c.produk.beli*100);
+  let rg=3;if(mg<30)rg=5;else if(mg>100)rg=1;
+  S.rep=Math.min(100,S.rep+rg);
+  S.custMax=S.rep>70?20:S.rep>40?15:S.rep>20?10:5;
+
+  let stars = '';
+  let ratingScore = (mg / 20) + (S.rep / 50); 
+  
+  if(ratingScore >= 4.5) stars = '<i class="fa-solid fa-star" style="color:gold"></i><i class="fa-solid fa-star" style="color:gold"></i><i class="fa-solid fa-star" style="color:gold"></i><i class="fa-solid fa-star" style="color:gold"></i><i class="fa-solid fa-star" style="color:gold"></i>';
+  else if(ratingScore >= 3.5) stars = '<i class="fa-solid fa-star" style="color:gold"></i><i class="fa-solid fa-star" style="color:gold"></i><i class="fa-solid fa-star" style="color:gold"></i><i class="fa-solid fa-star" style="color:gold"></i><i class="fa-regular fa-star"></i>';
+  else if(ratingScore >= 2.5) stars = '<i class="fa-solid fa-star" style="color:var(--gold)"></i><i class="fa-solid fa-star" style="color:var(--green)"></i><i class="fa-solid fa-star" style="color:var(--green)"></i><i class="fa-regular fa-star"></i><i class="fa-regular fa-star"></i>';
+  else if(ratingScore >= 1.5) stars = '<i class="fa-solid fa-star" style="color:var(--green)"></i><i class="fa-regular fa-star"></i><i class="fa-regular fa-star"></i><i class="fa-regular fa-star"></i><i class="fa-regular fa-star"></i>';
+  else stars = '<i class="fa-regular fa-star"></i><i class="fa-regular fa-star"></i><i class="fa-regular fa-star"></i><i class="fa-regular fa-star"></i><i class="fa-regular fa-star"></i>';
+
+  S.riwayat.push({type:'sell',text:`Jual ${c.qty}x ${c.produk.nama} ke ${c.nama} ${stars}`,amt:total,day:S.day});
+  toast(`Deal! +${rp(total)} (rep +${rg})`,'ts');
+  sfxSell();
+  S.cust=null;S.custToday++;renderPage();
+}
+
+function rejectDeal(){
+  const c=S.cust;if(!c)return;
+  S.rep=Math.max(0,S.rep-3);
+  S.riwayat.push({type:'reject',text:`Menolak ${c.nama} (${c.produk.nama})`,amt:0,day:S.day});
+  toast(`Menolak ${c.nama}. Rep -3`,'tw');
+  sfxReject();
+  S.cust=null;S.custToday++;renderPage();
+}
+
+function counterOffer(){
+  const c=S.cust;if(!c)return;
+  const inp=document.getElementById('offerInput');if(!inp)return;
+  const hj=S.harga[c.produk.id];
+  const mid=Math.round((hj+c.maxH)/2);
+  inp.value=mid;
+  const t=document.getElementById('offerTotal');
+  if(t)t.textContent=rp(mid*c.qty);
+  toast(`Tawaran baru: ${rp(mid)}/pcs`,'ti');
+}
+
+// ==============================
+// STOCK
+// ==============================
+function renderStock(){
+  const items=PRODUK.filter(p=>S.stok[p.id]>0);
+  const el=document.getElementById('pageStock');
+  if(!items.length){
+    el.innerHTML=`<div class="empty fup"><i class="fa-solid fa-box-open"></i><p>Stock masih kosong</p><button class="btn btn-b" onclick="goPage('packing')"><i class="fa-solid fa-boxes-packing"></i> Ke Packing</button></div>`;
+    return;
+  }
+  el.innerHTML=`
+    <div class="sec-h fup"><h2>Stock</h2><span class="sec-sub">${items.length} jenis — ${items.reduce((s,p)=>s+S.stok[p.id],0)} unit</span></div>
+    <div class="prod-grid fup2">
+      ${items.map(p=>{
+        const hj=S.harga[p.id];const mg=margin(p);
+        const rule = KAT_RULES[p.kat];
+        const catColor = rule ? rule.color : 'var(--text3)';
+        const catIcon = rule ? rule.icon : 'fa-box';
+
+        return`
+        <div class="p-card">
+          <div class="p-icon" style="background:${catColor}22;color:${catColor}"><i class="fa-solid ${catIcon}"></i></div>
+          <div class="p-name">${p.nama}</div>
+          <div class="p-cat"><i class="fa-solid ${catIcon}" style="margin-right:4px"></i>${p.kat}</div>
+          <div class="p-row"><span class="lbl">Stok</span><span class="val" style="color:${S.stok[p.id]>=5?'var(--green)':'var(--red)'}">${S.stok[p.id]}</span></div>
+          <div class="p-row"><span class="lbl">Harga Beli</span><span class="val">${rp(p.beli)}</span></div>
+          <div class="p-row"><span class="lbl">Harga Jual</span><span class="val" style="color:var(--green)">${rp(hj)}</span></div>
+          <div class="p-row"><span class="lbl">Profit/Item</span><span class="val" style="color:var(--green)">+${rp(hj-p.beli)} (${mg}%)</span></div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+// ==============================
+// HISTORY
+// ==============================
+function renderHist(){
+  const el=document.getElementById('pageHistory');
+  if(!S.riwayat.length){
+    el.innerHTML=`<div class="empty fup"><i class="fa-solid fa-clock-rotate-left"></i><p>Belum ada transaksi</p></div>`;return;
+  }
+  const list=S.riwayat.slice().reverse().slice(0,50);
+  el.innerHTML=`
+    <div class="sec-h fup"><h2>Riwayat Transaksi</h2><span class="sec-sub">${S.riwayat.length} total</span></div>
+    <div class="fup2">
+      ${list.map(r=>{
+        const isSell=r.type==='sell';const isBuy=r.type==='buy';
+        const icoCls=isSell?'background:var(--greenBg);color:var(--green)':isBuy?'background:var(--blueBg);color:var(--blue)':'background:var(--redBg);color:var(--red)';
+        const icoIcon=isSell?'fa-arrow-up':isBuy?'fa-arrow-down':'fa-xmark';
+        const amtCls=r.amt>=0?'plus':'minus';
+        return`
+        <div class="h-item">
+          <div class="h-ico" style="${icoCls}"><i class="fa-solid ${icoIcon}"></div>
+          <div class="h-txt">${r.text}<div class="h-sub">Hari ${r.day}</div></div>
+          <div class="h-amt ${amtCls}">${r.amt>=0?'+':''}${rp(Math.abs(r.amt))}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+// ==============================
+// COLLAB
+// ==============================
+function renderCollab() {
+  const el = document.getElementById('pageCollab');
+  let activeBanner = '';
+  if (S.collabActive) {
+    activeBanner = `
+      <div class="collab-banner fup">
+        <div style="position:relative;z-index:2">
+          <div class="collab-avatar-big"><i class="fa-solid ${pick(CELEBS).icon || 'fa-star'}"></i></div>
+          <h2 style="font-size:24px;font-weight:900;margin:10px 0;color:#fff">Collab Aktif!</h2>
+          <div style="font-size:18px;color:#a5b4fc;margin-bottom:5px">Bersama <span style="font-weight:800;color:#fff">${S.collabName}</span></div>
+          <div style="display:flex;justify-content:center;gap:15px;font-size:13px;margin-bottom:20px">
+            <div style="background:rgba(255,255,255,.1);padding:5px 15px;border-radius:20px;color:#6ee7b7">+${S.collabBoost}% Harga Jual</div>
+            <div style="background:rgba(255,255,255,.1);padding:5px 15px;border-radius:20px;color:#fca5a5">-${S.collabDiscount}% Harga Beli</div>
+          </div>
+          <div style="font-size:14px;color:#c7d2fe">Berakhir dalam <b>${S.collabDaysLeft} hari</b></div>
+        </div>
+      </div>
+    `;
+  }
+
+  el.innerHTML = `
+    ${activeBanner}
+    <div class="sec-h fup2" style="margin-top:20px">
+      <h2>Cari Selebgram</h2>
+      <span class="sec-sub">Pilih artis untuk diajak collab</span>
+    </div>
+    <div class="collab-grid fup3">
+      ${CELEBS.map(c => `
+        <div class="celeb-card">
+          <div class="celeb-img"><i class="fa-solid ${c.icon}"></i></div>
+          <div class="celeb-name">
+            ${c.nama} <i class="fa-solid fa-circle-check celeb-verified"></i>
+          </div>
+          <div class="celeb-cat">${c.niche}</div>
+          <div class="celeb-stat">
+            <span><i class="fa-solid fa-users"></i> 1jt+</span>
+            <span><i class="fa-solid fa-heart"></i> 1,7jt</span>
+          </div>
+          <button class="btn btn-purple btn-sm" style="width:100%" onclick="attemptCollab('${c.nama}')">
+            <i class="fa-solid fa-paper-plane"></i> Minta Collab
+          </button>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function attemptCollab(nama) {
+  if (S.collabActive) {
+    toast("Collab masih aktif! Tunggu sampai selesai.", "tw");
+    return;
+  }
+
+  const success = Math.random() < 0.5;
+
+  if (success) {
+    const roll = Math.random() * 100;
+    let boost = 20;
+    if (roll < 90) boost = 20;
+    else if (roll < 98) boost = 30;
+    else if (roll < 99.8) boost = 40;
+    else if (roll < 99.98) boost = 50;
+    else boost = 60;
+
+    const discount = rand(10, 15);
+
+    S.collabActive = true;
+    S.collabName = nama;
+    S.collabDaysLeft = 3;
+    S.collabBoost = boost;
+    S.collabDiscount = discount;
+
+    PRODUK.forEach(p => {
+      const basePrice = p.baseJual || p.jual;
+      const newSell = Math.round(basePrice * (1 + boost/100));
+      S.harga[p.id] = newSell;
+    });
+
+    toast(`YEAY! ${nama} mau collab! +${boost}% Harga Jual, -${discount}% Beli`, 'tp');
+    sfxCollab();
+    S.riwayat.push({type:'collab',text:`Collab sukses dengan ${nama} (+${boost}% Sell)`,amt:0,day:S.day});
+
+  } else {
+    toast(`Yah, ${nama} menolak tawaran collab :(`, 'te');
+    sfxReject();
+    S.riwayat.push({type:'collab',text:`Gagal collab dengan ${nama}`,amt:0,day:S.day});
+  }
+  renderCollab();
+}
+
+// ==============================
+// GAME OVER / REPORT
+// ==============================
+function renderGO(){
+  const profit=S.earn-S.spend;
+  const el=document.getElementById('pageGameover');
+  el.innerHTML=`
+    <div class="go-screen fup">
+      <div class="go-icon"><i class="fa-solid fa-chart-line"></div>
+      <div class="go-title">Laporan Bisnis</div>
+      <div class="go-sub">Berikut adalah ringkasan perjalanan bisnismu selama ini.</div>
+      <div class="go-grid">
+        <div class="go-stat"><div class="go-lbl">Modal Akhir</div><div class="go-val">${rp(S.money)}</div></div>
+        <div class="go-stat"><div class="go-lbl">Total Profit</div><div class="go-val" style="color:${profit>=0?'var(--green)':'var(--red)'}">${rp(profit)}</div></div>
+        <div class="go-stat"><div class="go-lbl">Terjual</div><div class="go-val">${S.sold}</div></div>
+        <div class="go-stat"><div class="go-lbl">Reputasi</div><div class="go-val">${S.rep}</div></div>
+        <div class="go-stat"><div class="go-lbl">Hari Berjalan</div><div class="go-val">${S.day}</div></div>
+        <div class="go-stat"><div class="go-lbl">Pengeluaran</div><div class="go-val">${rp(S.spend)}</div></div>
+      </div>
+      <button class="btn btn-g btn-lg" onclick="resetGame(true)"><i class="fa-solid fa-rotate-right"></i> Main Lagi</button>
+    </div>`;
+}
+
+function showReport(){
+  const profit=S.earn-S.spend;
+  const totalStok=Object.values(S.stok).reduce((a,b)=>a+b,0);
+  
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:999;display:flex;align-items:center;justify-content:center;animation:fin .15s ease;backdrop-filter:blur(5px);';
+  
+  ov.innerHTML=`
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:520px;width:90%;position:relative;box-shadow:0 20px 50px rgba(0,0,0,.5)">
+      <button onclick="this.closest('div[style*=position:fixed]').remove()" style="position:absolute;top:20px;right:15px;background:none;border:none;color:var(--text2);cursor:pointer;font-size:20px;transition:color .2s;" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--text2)'"><i class="fa-solid fa-xmark"></i></button>
+
+      <div style="display:flex;align-items:center;gap:20px; margin-bottom:25px;">
+        <div style="font-size:48px;color:var(--blue);line-height:1;"><i class="fa-solid fa-chart-line"></i></div>
+        <div>
+           <div style="font-size:28px;font-weight:900;color:var(--text);line-height:1.1">Laporan Bisnis</div>
+           <div style="font-size:13px;color:var(--text2);margin-top:4px;">Ringkasan performa toko saat ini</div>
+        </div>
+
+      <div class="go-grid" style="margin-bottom:0;">
+        <div class="go-stat"><div class="go-lbl">Modal Akhir</div><div class="go-val">${rp(S.money)}</div></div>
+        <div class="go-stat"><div class="go-lbl">Total Profit</div><div class="go-val" style="color:${profit>=0?'var(--green)':'var(--red)'}">${rp(profit)}</div></div>
+        <div class="go-stat"><div class="go-lbl">Terjual</div><div class="go-val">${S.sold}</div></div>
+        <div class="go-stat"><div class="go-lbl">Reputasi</div><div class="go-val">${S.rep}</div></div>
+        <div class="go-stat"><div class="go-lbl">Hari Berjalan</div><div class="go-val">${S.day}</div></div>
+        <div class="go-stat"><div class="go-lbl">Pengeluaran</div><div class="go-val">${rp(S.spend)}</div></div>
+      </div>
+
+    </div>
+  `;
+  ov.addEventListener('click',e=>{if(e.target===ov)ov.remove()});
+  document.body.appendChild(ov);
+}
+
+// ==============================
+// GAME FLOW
+// ==============================
+function startGame(){
+  if(confirm("Mulai permainan baru? Progres lama akan tertimpa jika disimpan.")) {
+    initState();S.started=true;
+    document.getElementById('hud').style.display='';
+    document.getElementById('nav').style.display=''; 
+    document.getElementById('pageWelcome').classList.remove('active');
+    goPage('dashboard');
+    toast('Game dimulai! Cek harga beli & jual di menu Packing.','ti');
+    sfxDay();
+  }
+}
+
+function resetGame(clearSave = false) {
+  if(clearSave) localStorage.removeItem(SAVE_KEY);
+  initState();
+  document.getElementById('hud').style.display='none';
+  document.getElementById('nav').style.display='none';
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('pageWelcome').classList.add('active');
+  checkSaveStatus();
+}
+
+function finishGame(){
+  S.over=true;
+  goPage('gameover');
+  sfxWin();
+}
+
+function nextDay(){
+  if (S.collabActive) {
+    S.collabDaysLeft--;
+    if (S.collabDaysLeft <= 0) {
+      S.collabActive = false;
+      S.collabName = null;
+      S.collabBoost = 0;
+      S.collabDiscount = 0;
+      
+      PRODUK.forEach(p => {
+        const base = p.baseJual || p.jual;
+        S.harga[p.id] = base;
+      });
+      toast("Masa Collab telah berakhir. Harga kembali normal.", "tw");
+    }
+  }
+
+  const todayE=S.riwayat.filter(r=>r.day===S.day&&r.type==='sell').reduce((s,r)=>s+r.amt,0);
+  S.chart.push(todayE);
+  S.day++;
+
+  S.custToday=0;S.cust=null;
+  S.custMax=S.rep>70?20:S.rep>40?15:S.rep>20?10:5;
+
+  const ov=document.createElement('div');ov.className='day-overlay';
+  ov.innerHTML=`<div class="d-num">Hari ${S.day}</div><div class="d-txt">${S.custMax} customer menunggu</div>`;
+  document.body.appendChild(ov);
+  sfxDay();
+  setTimeout(()=>{ov.style.opacity='0';ov.style.transition='opacity .4s';setTimeout(()=>ov.remove(),400)},900);
+
+  goPage('dashboard');
+}
+
+function showHelp(){
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;display:flex;align-items:center;justify-content:center;animation:fin .15s ease';
+  ov.innerHTML=`
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:480px;width:90%">
+      <div style="font-size:17px;font-weight:800;margin-bottom:16px"><i class="fa-solid fa-circle-question" style="color:var(--blue);margin-right:6px"></i>Cara Bermain</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.8">
+        <b style="color:var(--text)">1. Packing</b> — Beli stok atau Buat produk baru. Harga mengikuti aturan kategori (Update Terbaru!).<br>
+        <b style="color:var(--text)">2. Jualan</b> — Unggah produk yang sudah dibeli agar bisa dibeli customer.<br>
+        <b style="color:var(--text)">3. Customer</b> — Layani customer, negosiasi harga, dan dapatkan bintang rekomendasi.<br>
+        <b style="color:var(--text)">4. Collab</b> — Ajak Selebgram untuk menaikkan harga jual (20-60%) dan menurunkan harga beli (10-15%).<br>
+        <b style="color:var(--text)">5. Sandbox</b> — Tidak ada target uang maupun hari. Main selamanya!
+      </div>
+      <div style="margin-top:20px;text-align:right">
+        <button class="btn btn-g" onclick="this.closest('div[style]').parentElement.remove()">Mengerti</button>
+      </div>
+    </div>`;
+  ov.addEventListener('click',e=>{if(e.target===overlay)overlay.remove()});
+  document.body.appendChild(ov);
+}
+
+// Init Check
+checkAuth(); // Cek Auth saat load, bukan checkSaveStatus langsung
+</script>
+</body>
+</html>
